@@ -1,0 +1,37 @@
+---
+deployment:
+  tasks:
+    # === 1. Set deployment path (CHANGE THIS) ===
+    - export DEPLOYPATH=/home/username/public_html/site-location/
+
+    # === 2. Get the commit date of the latest pulled commit ===
+    - export COMMIT_DATE_RAW="$(git show -s --format=%ci HEAD)"
+
+    # Convert commit date into required format:
+    # Example: "2025-Dec-12 18:15 UTC"
+    - export COMMIT_DATE_FMT="$(date -u -d "$COMMIT_DATE_RAW" +"%Y-%b-%d %H:%M UTC")"
+
+    # === 3. Create backup folder with required name ===
+    - export BACKUPFOLDER="$DEPLOYPATH/../Zentra-Version-Change-Date-$COMMIT_DATE_FMT"
+    - mkdir "$BACKUPFOLDER"
+
+    # === 4. Move all existing code (EXCEPT images/uploads/customer files) into backup ===
+    # Add/remove excludes as needed for your project structure
+    - /usr/bin/rsync -av \
+        --exclude='uploads/' \
+        --exclude='images/' \
+        --exclude='customer_files/' \
+        --exclude='*.png' \
+        --exclude='*.jpg' \
+        --exclude='*.jpeg' \
+        --exclude='*.gif' \
+        --exclude='*.webp' \
+        --exclude='*.svg' \
+        $DEPLOYPATH "$BACKUPFOLDER"
+
+    # === 5. Pull new code into deployment path (NO deleting, NO touching customer files) ===
+    - /usr/bin/rsync -av \
+        --exclude='uploads/' \
+        --exclude='images/' \
+        --exclude='customer_files/' \
+        ./ "$DEPLOYPATH"
